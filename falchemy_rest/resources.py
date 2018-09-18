@@ -37,7 +37,7 @@ class BaseResource:
         obj = self.get_object(db,pk)
 
         if not obj:
-            raise falcon.HTTPNotFound()
+            raise falcon.HTTPNotFound( title = "Not Found", description = "Record with key {pk} does not exist".format(pk = pk))
         return obj
 
 
