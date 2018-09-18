@@ -1,6 +1,8 @@
  
 from sqlalchemy import  or_ , and_,column , desc, asc 
 
+import sqlalchemy
+import falcon 
 
 
 class QuerySet:
@@ -108,7 +110,7 @@ class QuerySet:
         if limit:
             queryset = self._queryset.limit(limit)            
        
-        results = self._connection.execute(queryset).fetchall()
+        results = self.__execute(queryset).fetchall()
 
         return [ dict(r) for r in results ]
     
@@ -116,30 +118,35 @@ class QuerySet:
     def delete(self):
         queryset = self._queryset
         
-        return self._connection.execute(queryset)
+        return self.__execute(queryset)
 
         
     
-        
+   
     def update(self,**data):
         queryset = self._queryset.values(**data)
-        return self._connection.execute(queryset)
+        return self.__execute(queryset)
 
-
-
-        
     
     def create(self, **data):
-        result =  self._connection.execute( self._queryset.values(**data) )
+        result =  self.__execute( self._queryset.values(**data) )
         
         pk = result.inserted_primary_key[0]
 
         data.update({"id": pk })
 
         return data
+    
+    def __execute(self,queryset):
+
+        try:
+            return  self._connection.execute(queryset)
+        except sqlalchemy.exc.IntegrityError as error:
+            error_message = str(error._message())
+            error_message = error_message.split('1062')[1][3:][:-3]
 
 
-
+            raise falcon.HTTPConflict(title= "Duplicate Entry", description = error_message )
 
 
 
