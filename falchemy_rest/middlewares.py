@@ -1,7 +1,7 @@
 
 
-from falcon_rest import auth
-from falcon_rest import sql
+from falchemy_rest import auth
+from falchemy_rest import sql
 
 class CoreMiddleWare:
     def __init__(self,db_engine):
