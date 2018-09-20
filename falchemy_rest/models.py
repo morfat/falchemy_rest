@@ -40,6 +40,10 @@ class CRUDMixin:
     @classmethod
     def update(cls):
         return cls.__table__.update()
+    
+    @classmethod
+    def get(cls, pk):
+        return cls.all().where(cls.id == pk)
 
         
 
@@ -66,7 +70,7 @@ class HasTenantMixin:
 
     @declared_attr
     def tenant_id(cls):
-        return Column(String(50), ForeignKey('tenants.id'))
+        return Column(String(50), ForeignKey('tenants.id') , nullable = False)
 
 
 Base = declarative_base(cls = BaseTable)

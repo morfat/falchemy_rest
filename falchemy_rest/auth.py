@@ -5,7 +5,7 @@ import falcon
 
 import json
 
-def validate_access_token(access_token,secret_key):
+def validate_bearer_token(bearer_token,secret_key):
     
     if not access_token:
         return None
@@ -30,7 +30,3 @@ def validate_access_token(access_token,secret_key):
 
 
 
-
-
-
- 

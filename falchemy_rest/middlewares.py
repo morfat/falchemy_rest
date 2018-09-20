@@ -80,44 +80,36 @@ class AuthMiddleWare:
     def __init__(self, secret_key):
         self.secret_key = secret_key
 
-    def process_request(self,req,resp):
-        encrypted_token = None
-
-        if req.method !='OPTIONS':
-
-            token = req.auth 
-
-            
-            if token:
-                #check token type and auth
-
-                token_type, token_str =  token.split()
-               
-                if token_type == 'Bearer':
-                    #login / validate oken  and login
-                    encrypted_token = token_str
-                
-
-        req.context['access_token'] = encrypted_token
-            
-        
 
         
-   
-
-
     def process_resource(self,req,resp,resource,params):
         must_login = True
+        auth_token_type = 'Bearer'
 
         try:
             must_login = resource.login_required #we expect login_required = False
         except AttributeError:
             pass
+        
+        try:
+            auth_token_type = resource.auth_token_type #we expect login_required = False
+        except AttributeError:
+            pass
+            
 
         if must_login:
-            auth_data = auth.validate_access_token( access_token = req.context['access_token'] , secret_key = self.secret_key)
+            auth_data = None
 
+            if auth_token_type == 'Bearer':
+                auth_data = auth.validate_bearer_token( bearer_token = req.auth , secret_key = self.secret_key)
+            
+        
             if auth_data is None:
                 raise falcon.HTTPUnauthorized(description = 'Login Required')
+            
+            req.context['auth'] = auth_data
+            
+
+       
     
 

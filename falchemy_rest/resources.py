@@ -63,9 +63,12 @@ class RetrieveResourceMixin:
 
 class CreateResourceMixin:
 
+    def perform_create(self,req,db,posted_data):
+        return db.objects( self.model.insert() ).create(**posted_data)
+
     def create(self,req,resp,db,posted_data, **kwargs):
 
-        created = db.objects( self.model.insert() ).create(**posted_data)
+        created = self.perform_create(req,db,posted_data)
 
         #get created object
         
@@ -254,3 +257,14 @@ class UpdateResource(UpdateResourceMixin , BaseResource):
 
         resp.media = { "data": [ read_serializer.valid_read_data ] }
 
+#Grouped generic resource views
+
+class ListCreateResource(ListResource,CreateResource):
+    pass
+
+class RetrieveUpdateResource(RetrieveResource,UpdateResource):
+    pass
+
+class RetrieveUpdateDestroyResource(RetrieveResource,UpdateResource,DestroyResource):
+    pass
+    
