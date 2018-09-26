@@ -11,18 +11,24 @@ class BaseResource:
     SEARCH_QUERY_PARAM_NAME = 'q'
 
     paginator_class = Paginator
+    multitenant = True
+
   
 
-    def get_queryset(self,**kwargs):
+    def get_queryset(self,req,**kwargs):
+        if self.multitenant:
+            return self.model.all().where( self.model.tenant_id == self.get_auth_tenant_id(req) )
+
         return self.model.all()
+
         
-    
+        
     def get_serializer_class(self,**kwargs):
         return self.serializer_class
     
 
-    def get_object(self,db,pk):
-        queryset = self.get_queryset()
+    def get_object(self,req,db,pk):
+        queryset = self.get_queryset(req)
 
         
         results = db.objects( queryset ).filter( id__eq=pk).fetch()
@@ -33,8 +39,8 @@ class BaseResource:
             return None
             
 
-    def get_object_or_404(self,db,pk):
-        obj = self.get_object(db,pk)
+    def get_object_or_404(self,req,db,pk):
+        obj = self.get_object(req,db,pk)
 
         if not obj:
             raise falcon.HTTPNotFound( title = "Not Found", description = "Record with key {pk} does not exist".format(pk = pk))
@@ -44,19 +50,28 @@ class BaseResource:
     def get_db(self, req):
         return req.context['db']
     
-
+    def get_auth_data(self,req):
+        try:
+            return req.context['auth']
+        except KeyError:
+            raise falcon.HTTPBadRequest(title="Tenant Identification Failed", 
+                                        description="You need to provide access token or Client-ID as header value for unauthenticated requests."
+                                        )
 
     
+    def get_auth_tenant_id(self,req):
+        auth = self.get_auth_data(req)
+        return auth.get("tenant_id")
+
     
 
-
+    
 #MIXINS
-
 
 class RetrieveResourceMixin:
 
     def retrieve(self,req,resp,db,pk,**kwargs):
-        result = self.get_object_or_404(db,pk)
+        result = self.get_object_or_404(req,db,pk)
 
         return result
 
@@ -64,6 +79,9 @@ class RetrieveResourceMixin:
 class CreateResourceMixin:
 
     def perform_create(self,req,db,posted_data):
+        if self.multitenant:
+            posted_data.update({"tenant_id": self.get_auth_tenant_id(req)} )
+
         return db.objects( self.model.insert() ).create(**posted_data)
 
     def create(self,req,resp,db,posted_data, **kwargs):
@@ -72,33 +90,37 @@ class CreateResourceMixin:
 
         #get created object
         
-        created_object = db.objects( self.model.all() ).filter( id__eq = created.get("id") ).fetch()
+        pk = created.get("id")
 
+        return self.get_object(req,db,pk) #db.objects( self.get_queryset(req) ).filter( id__eq = created.get("id") ).fetch()
 
-        return created_object[0]
+       
 
 
 
 class DestroyResourceMixin:
 
     def destroy(self,req,resp,db,result,**kwargs):
-       
         #destroy since it exists
-        db.objects( self.model.delete() ).filter( id__eq= result.get("id")).delete()
-
+        if self.multitenant:
+            db.objects( self.model.delete() ).filter( id__eq= result.get("id") , tenant_id__eq = self.get_auth_tenant_id(req) ).delete()
+        else:
+            db.objects( self.model.delete() ).filter( id__eq= result.get("id")).delete()
         return result
 
 class UpdateResourceMixin:
 
     def update(self,req,resp,db,result,data,**kwargs):
-       
-        db.objects( self.model.update() ).filter( id__eq= result.get("id")).update(**data)
+        pk = result.get("id")
+        db.objects( self.model.update() ).filter( id__eq= pk ).update(**data)
 
         #get updated object
         
-        updated_object = db.objects( self.model.all() ).filter( id__eq = result.get("id") ).fetch()
+        #updated_object = db.objects( self.model.all() ).filter( id__eq = result.get("id") ).fetch()
 
-        return updated_object
+        #return updated_object
+         
+        return self.get_object(req,db,pk)
 
 class ListResourceMixin:
 
@@ -112,7 +134,7 @@ class ListResourceMixin:
     def list(self,req,resp,db,**kwargs):
 
         query_params = req.params
-        queryset = self.get_queryset()
+        queryset = self.get_queryset(req)
         queryset_object = db.objects( queryset )
 
         #1.filter
@@ -243,7 +265,7 @@ class UpdateResource(UpdateResourceMixin , BaseResource):
 
         db = self.get_db(req)
         new_data = req.media
-        result = self.get_object_or_404(db,pk)
+        result = self.get_object_or_404(req,db,pk)
 
         write_serializer = self.get_serializer_class()(result)
 
@@ -252,7 +274,7 @@ class UpdateResource(UpdateResourceMixin , BaseResource):
         updated = self.update(req,resp,db, result = result, data = write_data)
         
       
-        read_serializer = self.get_serializer_class()(updated[0])
+        read_serializer = self.get_serializer_class()(updated)
 
 
         resp.media = { "data": [ read_serializer.valid_read_data ] }

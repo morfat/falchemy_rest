@@ -47,7 +47,9 @@ class CRUDMixin:
 
         
 
-        
+
+
+
     
 
 
@@ -59,9 +61,40 @@ class TimestampMixin:
 class BaseTable(CRUDMixin,TimestampMixin):
     @declared_attr
     def __tablename__(cls):
-        return cls.__name__.lower() + 's'
+        name = cls.__make_name()
+        return name.lower() + 's'
         
     id = Column(String(50), primary_key = True, default = utc_pk )
+
+
+    @classmethod
+    def __make_char(cls,index,char):
+        if char.isupper() and index != 0:
+            return '_' + char.lower()
+        
+        return char
+    
+    @classmethod
+    def __make_name(cls):
+        new_string_l = []
+        current_name = cls.__name__
+
+        if current_name.isupper():
+            #this is one name that is upper all
+            return current_name
+
+        for index,char in enumerate(current_name):
+            new_char = cls.__make_char(index,char)
+
+            new_string_l.append(new_char)
+        
+
+        new_string = ''.join(new_string_l)
+
+        return new_string
+        
+
+
 
 
 

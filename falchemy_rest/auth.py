@@ -6,8 +6,11 @@ import falcon
 import json
 
 def validate_bearer_token(bearer_token,secret_key):
-    
-    if not access_token:
+   
+
+    #print (bearer_token, secret_key)
+
+    if not bearer_token:
         return None
 
     k = {"k": secret_key, "kty":"oct"}
@@ -15,11 +18,15 @@ def validate_bearer_token(bearer_token,secret_key):
     key = jwk.JWK(**k)
 
     try:
-        ET = jwt.JWT(key = key, jwt = access_token)
+        bearer_token_l = bearer_token.split('Bearer')
+        bearer_token = bearer_token_l[1].strip()
+
+
+        ET = jwt.JWT(key = key, jwt = bearer_token)
       
         ST = jwt.JWT(key=key, jwt=ET.claims) # check_claims = required_token_claims)
         return json.loads(ST.claims)
-
+   
     except jwt.JWTExpired:
         raise falcon.HTTPUnauthorized(description = 'Access Token Expired')
     

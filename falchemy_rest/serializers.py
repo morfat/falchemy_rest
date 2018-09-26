@@ -1,6 +1,15 @@
 import serpy
 
 import falcon
+import json
+
+class DictField(serpy.Field):
+    def to_value(self,value):
+        try:
+            return json.loads(value)
+        except TypeError:
+            return json.dumps(value)
+
 
 class BaseSerializer(serpy.DictSerializer):
 
