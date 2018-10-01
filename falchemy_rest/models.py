@@ -1,7 +1,36 @@
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative import has_inherited_table
 
-from sqlalchemy import Column, Integer, String, Boolean,DateTime,ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean,DateTime,ForeignKey,Numeric,UniqueConstraint
+
+
+#define model fields
+
+def CharField(max_length,*args,**kwargs):
+    return Column(String(max_length),*args,**kwargs)
+
+def DateTimeField(*args,**kwargs):
+    return Column(DateTime,*args,**kwargs)
+ 
+def BooleanField(*args,**kwargs):
+    return Column(Boolean,*args,**kwargs)
+
+def IntegerField(*args,**kwargs):
+    return Column(Integer,*args,**kwargs)
+
+def ForeignKeyField(references,*args,**kwargs):
+    return CharField(50,ForeignKey(references),*args, **kwargs)
+
+def TenantField(**kwargs):
+    return CharField(50, nullable=False,**kwargs)
+
+def DecimalField(max_digits,decimal_places,*args,**kwargs):
+    return Column(Numeric(precision = max_digits, scale = decimal_places),*args,**kwargs)
+
+def UniqueTogether(*args,**kwargs):
+    return UniqueConstraint(*args,**kwargs)
+
+
 import uuid
 
 import datetime

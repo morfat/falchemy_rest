@@ -108,31 +108,33 @@ class AuthMiddleWare:
 
         
     def process_resource(self,req,resp,resource,params):
-        must_login = True
-        auth_token_type = 'Bearer'
-
-        try:
-            must_login = resource.login_required #we expect login_required = False
-        except AttributeError:
-            pass
-        
-        try:
-            auth_token_type = resource.auth_token_type #we expect login_required = False
-        except AttributeError:
-            pass
+        if req.method != 'OPTIONS':
             
+            must_login = True
+            auth_token_type = 'Bearer'
 
-        if must_login:
-            auth_data = None
+            try:
+                must_login = resource.login_required #we expect login_required = False
+            except AttributeError:
+                pass
+            
+            try:
+                auth_token_type = resource.auth_token_type #we expect login_required = False
+            except AttributeError:
+                pass
+                
 
-            if auth_token_type == 'Bearer':
-                auth_data = auth.validate_bearer_token( bearer_token = req.auth , secret_key = self.get_secret_key(req))
+            if must_login:
+                auth_data = None
+
+                if auth_token_type == 'Bearer':
+                    auth_data = auth.validate_bearer_token( bearer_token = req.auth , secret_key = self.get_secret_key(req))
+                
             
-        
-            if auth_data is None:
-                raise falcon.HTTPUnauthorized(description = 'Login Required')
-            
-            req.context['auth'] = auth_data
+                if auth_data is None:
+                    raise falcon.HTTPUnauthorized(description = 'Login Required')
+                
+                req.context['auth'] = auth_data
     
     def get_secret_key(self,req):
         return self.secret_key
