@@ -114,6 +114,12 @@ class QuerySet:
 
         return [ dict(r) for r in results ]
     
+    def fetch_one(self):
+        queryset = self._queryset.limit(1)
+        result = self.__execute(queryset).fetchone()
+
+        return dict(result) if result else None
+        
     
     def delete(self):
         queryset = self._queryset

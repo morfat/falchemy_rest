@@ -1,7 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative import has_inherited_table
 
-from sqlalchemy import Column, Integer, String, Boolean,DateTime,ForeignKey,Numeric,UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean,DateTime,Date,ForeignKey,Numeric,UniqueConstraint
 
 
 #define model fields
@@ -11,7 +11,11 @@ def CharField(max_length,*args,**kwargs):
 
 def DateTimeField(*args,**kwargs):
     return Column(DateTime,*args,**kwargs)
+
+def DateField(*args,**kwargs):
+    return Column(Date,*args,**kwargs)
  
+
 def BooleanField(*args,**kwargs):
     return Column(Boolean,*args,**kwargs)
 
