@@ -58,7 +58,24 @@ class BaseResource:
                                         description="You need to provide access token or Client-ID as header value for unauthenticated requests."
                                         )
 
+    def get_authenticated_tenant(self,req):
+        try:
+            return req.context['authenticated_tenant']
+        except KeyError:
+            return None
     
+    def get_resource_tenant(self,req):
+        try:
+            return req.context['resource_tenant']
+        except KeyError:
+            return None
+
+    def get_resource_app(self,req):
+        try:
+            return req.context['resource_app']
+        except KeyError:
+            return None
+
     def get_auth_tenant_id(self,req):
         auth = self.get_auth_data(req)
         return auth.get("tenant_id")
